@@ -45,3 +45,9 @@ Linux
   print(oci.__file__)
   print(psutil.__file__)
   EOF
+
+3. 専用システムユーザー作成
+---------------------------------------------------------------------
+.. code-block:: bash
+
+  useradd -s /sbin/nologin -M custom_agent
