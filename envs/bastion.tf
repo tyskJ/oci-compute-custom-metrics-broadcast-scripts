@@ -61,3 +61,27 @@ Session
 #     public_key_content = tls_private_key.ssh_keygen_bastion.public_key_openssh
 #   }
 # }
+
+##### SSH port forwarding - Windows
+# data "oci_core_instance" "windows" {
+#   instance_id = oci_core_instance.windows_instance.id
+# }
+
+# resource "oci_bastion_session" "ssh_port_forwarding_windows" {
+#   # # ターゲットリソースがRUNNINGでないと作成不可のためcountで制御
+#   # # 作成のタイミングで、Private Endpointからのインバウンドルールは不要
+#   # count = contains(["PROVISIONING", "STARTING", "RUNNING"], data.oci_core_instance.windows.state) ? 1 : 0
+#   display_name = "ssh-port-forwarding-session-to-windows"
+#   bastion_id   = oci_bastion_bastion.this.id
+#   target_resource_details {
+#     session_type                       = "PORT_FORWARDING"
+#     target_resource_id                 = oci_core_instance.windows_instance.id
+#     target_resource_port               = 3389
+#     target_resource_private_ip_address = oci_core_instance.windows_instance.private_ip
+#   }
+#   session_ttl_in_seconds = 10800 # minutes (Max)
+#   key_type               = "PUB"
+#   key_details {
+#     public_key_content = tls_private_key.ssh_keygen_bastion.public_key_openssh
+#   }
+# }
