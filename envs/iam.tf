@@ -19,7 +19,7 @@ resource "oci_identity_dynamic_group" "compute" {
 /************************************************************
 IAM Policy - Compute
 ************************************************************/
-resource "oci_identity_policy" "compute_for_agent_custommoni" {
+resource "oci_identity_policy" "compute_for_custommoni" {
   compartment_id = oci_identity_compartment.workload.id
   description    = "OCI Compute Policy for Custom Metrics Monitoring"
   name           = "compute-custom-metrics-monitoring-policy"
