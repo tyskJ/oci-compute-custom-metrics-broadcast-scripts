@@ -8,8 +8,10 @@ resource "oci_identity_dynamic_group" "compute" {
   name           = "Compute_Dynamic_Group"
   description    = "Compute Dynamic Group"
   matching_rule = format(
-    "All {instance.compartment.id = '%s', tag.Compute.CustomMetrics.value = 'true'}",
-    oci_identity_compartment.workload.id
+    "All {instance.compartment.id = '%s', tag.%s.%s.value = 'true'}",
+    oci_identity_compartment.workload.id,
+    oci_identity_tag_namespace.compute.name,
+    oci_identity_tag.key_custommetrics.name
   )
   defined_tags = local.common_defined_tags
 }
