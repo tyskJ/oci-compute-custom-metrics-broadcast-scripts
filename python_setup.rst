@@ -51,3 +51,17 @@ Linux
 .. code-block:: bash
 
   useradd -s /sbin/nologin -M custom_agent
+
+4. 設定ファイル作成
+---------------------------------------------------------------------
+**/etc/sysconfig/oci-custom-agent-linux**
+
+.. code-block:: bash
+
+
+* ファイルの権限を変更
+
+.. code-block:: bash
+
+  chown root:ociagent /etc/sysconfig/oci-custom-agent-linux
+  chmod 640 /etc/sysconfig/oci-custom-agent-linux

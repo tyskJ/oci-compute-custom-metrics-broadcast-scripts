@@ -1,0 +1,29 @@
+{
+  "agent": {
+    "interval_seconds": 60,
+    "namespace": "custom_oracle_linux",
+    "resource_group": "os"
+  },
+  "disk": {
+    "exclude_fstypes": [
+      "proc",
+      "sysfs",
+      "tmpfs",
+      "devtmpfs",
+      "efivarfs",
+      "cgroup",
+      "cgroup2",
+      "overlay",
+      "squashfs",
+      "nsfs",
+      "rpc_pipefs",
+      "autofs"
+    ]
+  },
+  "procstat": [
+    {
+      "dimention": "nginx",
+      "pattern": "/usr/sbin/nginx" 
+    }
+  ]
+}
