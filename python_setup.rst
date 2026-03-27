@@ -63,5 +63,5 @@ Linux
 
 .. code-block:: bash
 
-  chown root:ociagent /etc/sysconfig/oci-custom-agent-linux
+  chown root:custom_agent /etc/sysconfig/oci-custom-agent-linux
   chmod 640 /etc/sysconfig/oci-custom-agent-linux
