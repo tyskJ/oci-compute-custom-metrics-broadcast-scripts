@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-OCI Compute 上で動作させることを想定したカスタムメトリクス送信スクリプト。
+OCI Compute 上で動作させることを想定したカスタムメトリクス送信スクリプト（Linux / 精度重視）。
 
 - disk: df -PT で取得できるファイルシステムを対象（exclude_fstypes は除外）
+        disk_usage_percent / disk_available_percent を小数2桁で送信（Capacity列とは一致しない場合あり）
 - procstat: ps -eo args の cmdline に対して pattern(正規表現) で一致したプロセス数を送信
 
 要件:
@@ -29,12 +30,12 @@ from typing import Any, Dict, List, Optional
 try:
     import oci
     from oci.auth import signers
-except Exception as e:
+except Exception:
     oci = None
     signers = None
 
 
-LOG = logging.getLogger("linux_custom_metrics")
+LOG = logging.getLogger("oci_custom_agent_linux")
 
 
 # -----------------------------
@@ -73,7 +74,7 @@ def fetch_instance_metadata(timeout_seconds: int = 2) -> Optional[Dict[str, Any]
         return None
 
 
-def get_compartment_ocid(cfg: Dict[str, Any]) -> str:
+def get_compartment_ocid() -> str:
     """
     compartment OCID を取得（必須）。
     - env: COMPARTMENT_OCID
@@ -94,12 +95,17 @@ def get_compartment_ocid(cfg: Dict[str, Any]) -> str:
 
 
 # -----------------------------
-# Collect: Disk
+# Collect: Disk (precision)
 # -----------------------------
 def collect_disks(exclude_fstypes: List[str]) -> List[Dict[str, Any]]:
     """
     df -PT の出力をパースし、fstype が除外対象でないものを返す。
-    df の used/avail は通常 1K-blocks 基準の数値（-P で安定）
+    精度重視：1024-blocks / Used / Available から使用率・空き率を算出し、小数2桁で返す。
+
+    usage% = used / total * 100
+    avail% = avail / total * 100
+
+    ※ df の Capacity 列（整数%）とは丸め方が違うため一致しない場合がある。
     """
     cmd = ["df", "-PT"]
     proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -111,11 +117,8 @@ def collect_disks(exclude_fstypes: List[str]) -> List[Dict[str, Any]]:
     if len(lines) <= 1:
         return []
 
-    # header: Filesystem Type 1024-blocks Used Available Capacity Mounted on
-    disks = []
+    disks: List[Dict[str, Any]] = []
     for line in lines[1:]:
-        # mountpoint に空白が入るケースは通常少ないが、
-        # 念のため split の結果が多い場合は末尾を mount とする
         parts = line.split()
         if len(parts) < 7:
             continue
@@ -125,38 +128,45 @@ def collect_disks(exclude_fstypes: List[str]) -> List[Dict[str, Any]]:
         blocks_1k = parts[2]
         used_1k = parts[3]
         avail_1k = parts[4]
-        capacity = parts[5]       # "12%"
         mountpoint = " ".join(parts[6:])
 
         if fstype in exclude_fstypes:
             continue
 
-        # 数値変換
         try:
+            total_kb = int(blocks_1k)
             used_kb = int(used_1k)
             avail_kb = int(avail_1k)
-            usage_percent = int(capacity.rstrip("%"))
         except ValueError:
             continue
+
+        if total_kb <= 0:
+            continue
+
+        usage = (used_kb / total_kb) * 100.0
+        avail = (avail_kb / total_kb) * 100.0
+
+        # 念のため 0〜100 にクリップ（異常値対策）
+        usage = round(max(0.0, min(100.0, usage)), 2)
+        avail = round(max(0.0, min(100.0, avail)), 2)
 
         disks.append({
             "filesystem": filesystem,
             "fstype": fstype,
             "mountpoint": mountpoint,
-            "usage_percent": usage_percent,
-            "used_bytes": used_kb * 1024,
-            "available_bytes": avail_kb * 1024,
+            "usage_percent": usage,
+            "available_percent": avail,
         })
 
     return disks
 
 
 # -----------------------------
-# Collect: Procstat
+# Collect: Procstat (cmdline only)
 # -----------------------------
 def list_cmdlines() -> List[str]:
     """
-    ps aux の COMMAND 相当を狙うなら、ps -eo args が一番シンプル。
+    ps aux の COMMAND 相当を狙うなら、ps -eo args がシンプル。
     """
     cmd = ["ps", "-eo", "args"]
     proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -164,7 +174,6 @@ def list_cmdlines() -> List[str]:
         raise RuntimeError(f"ps command failed: rc={proc.returncode}, stderr={proc.stderr}")
 
     lines = proc.stdout.splitlines()
-    # 先頭行は "COMMAND" 的なヘッダになる場合があるので除外
     if lines and lines[0].strip().lower() in ("command", "args"):
         lines = lines[1:]
     return lines
@@ -176,17 +185,15 @@ def collect_procstat(proc_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     config 側のキーは dimension/dimention どちらでも許容。
     """
     cmdlines = list_cmdlines()
-    results = []
+    results: List[Dict[str, Any]] = []
 
     for rule in proc_rules:
         pattern = (rule.get("pattern") or "").strip()
         if not pattern:
             continue
 
-        # dimensionキーは、ユーザー入力の "dimention" typo にも対応
-        dim = (rule.get("dimension") or rule.get("dimention") or "unknown").strip()
-        if not dim:
-            dim = "unknown"
+        # "dimention" typo 吸収
+        dim = (rule.get("dimension") or rule.get("dimention") or "unknown").strip() or "unknown"
 
         try:
             regex = re.compile(pattern)
@@ -211,12 +218,11 @@ def collect_procstat(proc_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 # OCI Monitoring: Post metrics
 # -----------------------------
 def build_metric_payload(
-    namespace: str,
-    resource_group: str,
     metric_name: str,
     value: float,
     dimensions: Dict[str, str],
-    timestamp: str
+    timestamp: str,
+    resource_group: str
 ) -> Dict[str, Any]:
     """
     PutMetricDataDetails の metricData 要素を dict で組み立てる。
@@ -225,9 +231,7 @@ def build_metric_payload(
     return {
         "name": metric_name,
         "dimensions": dimensions,
-        "datapoints": [
-            {"timestamp": timestamp, "value": value}
-        ],
+        "datapoints": [{"timestamp": timestamp, "value": value}],
         "resource_group": resource_group
     }
 
@@ -235,24 +239,19 @@ def build_metric_payload(
 def post_metrics_to_oci(
     compartment_id: str,
     namespace: str,
-    resource_group: str,
     metric_data: List[Dict[str, Any]]
 ) -> None:
     """
-    OCI Monitoring へメトリクス投入。
-    Instance Principals を使用。
+    OCI Monitoring へメトリクス投入（Instance Principals）。
     """
     if oci is None or signers is None:
         raise RuntimeError("OCI Python SDK (oci) が import できません。pip で oci を入れてください。")
 
     signer = signers.InstancePrincipalsSecurityTokenSigner()
 
-    # region は signer が内部で解決するが、環境によっては明示が必要な場合がある。
-    # その場合は OCI_REGION を設定するとよい（例: ap-tokyo-1）
     region = os.environ.get("OCI_REGION", "").strip()
     if region:
-        config = {"region": region}
-        client = oci.monitoring.MonitoringClient(config=config, signer=signer)
+        client = oci.monitoring.MonitoringClient(config={"region": region}, signer=signer)
     else:
         client = oci.monitoring.MonitoringClient(config={}, signer=signer)
 
@@ -263,9 +262,15 @@ def post_metrics_to_oci(
     )
 
     resp = client.put_metric_data(details)
-    # 成功/失敗の詳細は resp.data で見れる
-    LOG.info("put_metric_data status=%s, failed_count=%s",
-             resp.status, getattr(resp.data, "failed_metrics", None))
+    LOG.info("put_metric_data status=%s", resp.status)
+
+    # 失敗があればログに出す（SDKの型に依存するため安全に扱う）
+    try:
+        failed = getattr(resp.data, "failed_metrics", None)
+        if failed:
+            LOG.warning("failed_metrics=%s", failed)
+    except Exception:
+        pass
 
 
 # -----------------------------
@@ -298,11 +303,9 @@ def main() -> int:
     cfg = load_config(args.config)
 
     agent = cfg.get("agent", {})
-    interval_seconds = int(agent.get("interval_seconds", 60))
     namespace = str(agent.get("namespace", "custom_oracle_linux"))
     resource_group = str(agent.get("resource_group", "os"))
 
-    # timestamp は収集時点（1分毎実行を想定）
     ts = utc_now_rfc3339()
 
     # ---- collect disk
@@ -314,57 +317,52 @@ def main() -> int:
     proc_rules = cfg.get("procstat", []) or []
     procs = collect_procstat(proc_rules)
 
-    # ---- build metric data
-    metric_data = []
+    metric_data: List[Dict[str, Any]] = []
 
-    # Disk metrics: mountpoint を dimension にする
+    # Disk metrics
     for d in disks:
-        dims = {
-            "mountpoint": d["mountpoint"],
-            "fstype": d["fstype"],
-        }
+        dims = {"mountpoint": d["mountpoint"], "fstype": d["fstype"]}
+
         metric_data.append(build_metric_payload(
-            namespace, resource_group,
-            "disk_usage_percent", float(d["usage_percent"]),
-            dims, ts
-        ))
-        metric_data.append(build_metric_payload(
-            namespace, resource_group,
-            "disk_used_bytes", float(d["used_bytes"]),
-            dims, ts
-        ))
-        metric_data.append(build_metric_payload(
-            namespace, resource_group,
-            "disk_available_bytes", float(d["available_bytes"]),
-            dims, ts
+            "disk_usage_percent",
+            float(d["usage_percent"]),
+            dims,
+            ts,
+            resource_group
         ))
 
-    # Proc metrics: dimension(=dimention) を dimension として送る
+        metric_data.append(build_metric_payload(
+            "disk_available_percent",
+            float(d["available_percent"]),
+            dims,
+            ts,
+            resource_group
+        ))
+
+    # Proc metrics
     for p in procs:
         dims = {"dimension": p["dimension"]}
         metric_data.append(build_metric_payload(
-            namespace, resource_group,
-            "process_count", float(p["process_count"]),
-            dims, ts
+            "process_count",
+            float(p["process_count"]),
+            dims,
+            ts,
+            resource_group
         ))
 
     if args.dry_run:
-        # 送信せずに内容表示
         out = {
             "timestamp": ts,
             "namespace": namespace,
             "resource_group": resource_group,
-            "interval_seconds": interval_seconds,
             "metric_count": len(metric_data),
             "metric_data": metric_data,
         }
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return 0
 
-    # ---- post to OCI
-    compartment_id = get_compartment_ocid(cfg)
-    post_metrics_to_oci(compartment_id, namespace, resource_group, metric_data)
-
+    compartment_id = get_compartment_ocid()
+    post_metrics_to_oci(compartment_id, namespace, metric_data)
     return 0
 
 
