@@ -81,5 +81,5 @@ Linux
 
 .. code-block:: bash
 
-  chown root:custom_agent /opt/oci-custom-metrics/oci_custom_aget_linux.py
-  chmod 640 /opt/oci-custom-metrics/oci_custom_aget_linux.py
+  chown root:custom_agent /opt/oci-custom-metrics/oci_custom_agent_linux.py
+  chmod 640 /opt/oci-custom-metrics/oci_custom_agent_linux.py
