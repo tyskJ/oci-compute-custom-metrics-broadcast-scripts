@@ -374,4 +374,3 @@ if __name__ == "__main__":
     except Exception as e:
         LOG.exception("fatal: %s", e)
         sys.exit(1)
-``
