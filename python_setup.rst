@@ -65,3 +65,21 @@ Linux
 
   chown root:custom_agent /etc/sysconfig/oci-custom-agent-linux
   chmod 640 /etc/sysconfig/oci-custom-agent-linux
+
+5. スクリプトファイル作成
+---------------------------------------------------------------------
+.. code-block:: bash
+
+  mkdir -p /opt/oci-custom-metrics
+  
+**/opt/oci-custom-metrics/oci_custom_aget_linux.py**
+
+.. code-block:: bash
+
+
+* ファイルの権限を変更
+
+.. code-block:: bash
+
+  chown root:custom_agent /opt/oci-custom-metrics/oci_custom_aget_linux.py
+  chmod 640 /opt/oci-custom-metrics/oci_custom_aget_linux.py
