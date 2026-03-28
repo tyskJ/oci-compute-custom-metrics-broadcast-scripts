@@ -22,8 +22,8 @@
   },
   "procstat": [
     {
-      "dimension": "nginx",
-      "pattern": "/usr/sbin/nginx" 
+      "name": "nginx",
+      "pattern": "/usr/sbin/nginx"
     }
   ]
 }

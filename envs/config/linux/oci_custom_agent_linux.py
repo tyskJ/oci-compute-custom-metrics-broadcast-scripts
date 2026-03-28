@@ -207,7 +207,6 @@ def list_cmdlines() -> List[str]:
 def collect_procstat(proc_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     config の procstat ルールを元に、pattern（正規表現）に一致する行数を数える。
-    ※ config 側の "dimention" typo も吸収（dimensionとして扱う）
     """
     cmdlines = list_cmdlines()
     results: List[Dict[str, Any]] = []
@@ -218,7 +217,7 @@ def collect_procstat(proc_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             continue
 
         # "dimention" typo を吸収
-        dim = (rule.get("dimension") or rule.get("dimention") or "unknown").strip() or "unknown"
+        dim = (rule.get("name") or "unknown").strip() or "unknown"
 
         # 正規表現としてコンパイル（不正なら例外で気づけるようにする）
         try:
@@ -367,11 +366,11 @@ def main() -> int:
         ))
 
     # proc: dimension を dimensions に入れて送る
-    # for p in procs:
-    #     dims = {"dimension": p["dimension"]}
-    #     metric_data.append(build_metric_payload(
-    #         "process_count", float(p["process_count"]), dims, ts, resource_group
-    #     ))
+    for p in procs:
+        dims = {"name": p["dimension"]}
+        metric_data.append(build_metric_payload(
+            "process_count", namespace, resource_group, compartment_id, dims, ts, float(p["process_count"])
+        ))
 
     # dry-run: 送信せずJSON表示して終了（動作確認用）
     if args.dry_run:
