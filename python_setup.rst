@@ -20,7 +20,7 @@ Linux
 .. code-block:: bash
 
   pip3 install --upgrade pip --root-user-action=ignore
-  pip3 install oci psutil --root-user-action=ignore
+  pip3 install oci --root-user-action=ignore
 
 .. note::
   
@@ -30,8 +30,7 @@ Linux
 
   python3 - <<'EOF'
   import oci
-  import psutil
-  print("oci and psutil imported successfully")
+  print("oci imported successfully")
   EOF
 
 .. note::
@@ -41,9 +40,8 @@ Linux
 .. code-block:: bash
 
   python3 - <<'EOF'
-  import oci, psutil
+  import oci
   print(oci.__file__)
-  print(psutil.__file__)
   EOF
 
 3. 専用システムユーザー作成
@@ -55,8 +53,6 @@ Linux
 4. 設定ファイル作成
 ---------------------------------------------------------------------
 `/etc/sysconfig/oci-custom-agent-linux <./envs/config/linux/oci-custom-agent-linux.json>`_
-
-* ファイルの権限を変更
 
 .. code-block:: bash
 
@@ -70,8 +66,6 @@ Linux
   mkdir -p /opt/oci-custom-metrics
   
 `/opt/oci-custom-metrics/oci_custom_agent_linux.py <./envs/config/linux/oci_custom_agent_linux.py>`_
-
-* ファイルの権限を変更
 
 .. code-block:: bash
 
