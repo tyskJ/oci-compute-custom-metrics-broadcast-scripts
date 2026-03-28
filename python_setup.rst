@@ -54,10 +54,7 @@ Linux
 
 4. 設定ファイル作成
 ---------------------------------------------------------------------
-**/etc/sysconfig/oci-custom-agent-linux**
-
-`oci-custom-agent-linux <./envs/config/linux/oci-custom-agent-linux.json>`_
-
+`**/etc/sysconfig/oci-custom-agent-linux** <./envs/config/linux/oci-custom-agent-linux.json>`_
 
 * ファイルの権限を変更
 
