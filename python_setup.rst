@@ -54,7 +54,7 @@ Linux
 
 4. 設定ファイル作成
 ---------------------------------------------------------------------
-`**/etc/sysconfig/oci-custom-agent-linux** <./envs/config/linux/oci-custom-agent-linux.json>`_
+`/etc/sysconfig/oci-custom-agent-linux <./envs/config/linux/oci-custom-agent-linux.json>`_
 
 * ファイルの権限を変更
 
@@ -69,10 +69,7 @@ Linux
 
   mkdir -p /opt/oci-custom-metrics
   
-**/opt/oci-custom-metrics/oci_custom_agent_linux.py**
-
-.. code-block:: bash
-
+`/opt/oci-custom-metrics/oci_custom_agent_linux.py <./envs/config/linux/oci_custom_agent_linux.py>`_
 
 * ファイルの権限を変更
 
