@@ -83,3 +83,13 @@ Linux
 
   chown root:custom_agent /opt/oci-custom-metrics/oci_custom_agent_linux.py
   chmod 640 /opt/oci-custom-metrics/oci_custom_agent_linux.py
+
+参考資料
+=====================================================================
+リファレンス
+---------------------------------------------------------------------
+* `oci <https://docs.oracle.com/en-us/iaas/tools/python/latest/>`_
+
+ブログ
+---------------------------------------------------------------------
+* `systemd.timer 入門 <https://dev.classmethod.jp/articles/slug-btThPHViGsPt/>`_
