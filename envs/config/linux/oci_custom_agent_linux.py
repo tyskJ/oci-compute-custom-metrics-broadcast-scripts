@@ -91,6 +91,30 @@ def get_compartment_ocid() -> str:
         "環境変数 COMPARTMENT_OCID を設定するか、OCI Compute 上で実行してください。"
     )
 
+def get_region() -> str:
+    """
+    OCIのリージョンを取得する
+    優先順位：
+      1) 環境変数 OCI_REGION
+      2) Instance Metadata
+    """
+    # ① 環境変数
+    env = os.environ.get("OCI_REGION", "").strip()
+    if env:
+        return env
+
+    # ② Instance Metadata
+    meta = fetch_instance_metadata()
+    if meta:
+        # region または canonicalRegionName が入っている場合がある
+        region = meta.get("region") or meta.get("canonicalRegionName")
+        if region:
+            return region
+
+    raise RuntimeError(
+        "OCI region が取得できません。"
+        "環境変数 OCI_REGION を設定するか、OCI Compute 上で実行してください。"
+    )
 
 # -----------------------------
 # Collect: Disk（ディスク％を精度重視で算出）
@@ -254,7 +278,7 @@ def post_metrics_to_oci(compartment_id: str, namespace: str, metric_data: List[D
     signer = signers.InstancePrincipalsSecurityTokenSigner()
 
     # 環境変数 OCI_REGION があれば明示（無くても動くケースは多い）
-    region = os.environ.get("OCI_REGION", "").strip()
+    region = get_region()
     client = oci.monitoring.MonitoringClient(config={"region": region} if region else {}, signer=signer)
 
     # put_metric_data に渡す詳細（compartment / namespace / metrics）
