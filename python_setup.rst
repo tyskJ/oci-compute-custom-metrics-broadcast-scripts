@@ -56,9 +56,7 @@ Linux
 ---------------------------------------------------------------------
 **/etc/sysconfig/oci-custom-agent-linux**
 
-.. code-block:: bash
-
-  .. include:: ./envs/config/linux/oci-custom-agent-linux.json
+`oci-custom-agent-linux <./envs/config/linux/oci-custom-agent-linux.json>`_
 
 
 * ファイルの権限を変更
