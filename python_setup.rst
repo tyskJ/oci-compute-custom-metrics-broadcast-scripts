@@ -72,6 +72,50 @@ Linux
   chown root:custom_agent /opt/oci-custom-metrics/oci_custom_agent_linux.py
   chmod 640 /opt/oci-custom-metrics/oci_custom_agent_linux.py
 
+6. 定期実行設定
+---------------------------------------------------------------------
+* ``systemd.timer`` 設定
+
+**/etc/systemd/system/oci-custom-agent-linux.timer**
+
+.. code-block:: bash
+
+  [Unit]
+  Description=Run OCI Custom Metrics Agent every minute
+
+  [Timer]
+  OnBootSec=3m
+  OnUnitActiveSec=1m
+  AccuracySec=100ms
+  Unit=oci-custom-agent-linux.service
+
+  [Install]
+  WantedBy=timers.target
+
+* ``systemd.service`` 設定
+
+**/etc/systemd/system/oci-custom-agent-linux.service**
+
+.. code-block::
+
+  [Unit]
+  Description=OCI Custom Metrics Agent
+
+  [Service]
+  User=custom_agent
+  Type=oneshot
+  ExecStart=/usr/bin/python3 /opt/oci-custom-metrics/oci_custom_agent_linux.py -c /etc/sysconfig/oci-custom-agent-linux
+
+* ``timer`` 自動起動有効化 & 起動
+
+.. code-block:: bash
+
+  systemctl enable --now oci-custom-agent-linux.timer
+
+.. note::
+
+  * ``systemctl list-timers`` にて表示されればOKです
+
 参考資料
 =====================================================================
 リファレンス
