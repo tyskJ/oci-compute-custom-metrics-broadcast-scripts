@@ -58,6 +58,8 @@ Linux
 
 .. code-block:: bash
 
+  .. include:: ./envs/config/linux/oci-custom-agent-linux.json
+
 
 * ファイルの権限を変更
 
@@ -72,7 +74,7 @@ Linux
 
   mkdir -p /opt/oci-custom-metrics
   
-**/opt/oci-custom-metrics/oci_custom_aget_linux.py**
+**/opt/oci-custom-metrics/oci_custom_agent_linux.py**
 
 .. code-block:: bash
 
