@@ -246,27 +246,41 @@ def collect_procstat(proc_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 # -----------------------------
 def build_metric_payload(
     metric_name: str,
-    value: float,
+    namespace: str,
+    resource_group: str,
+    compartment_id: str,
     dimensions: Dict[str, str],
     timestamp: str,
-    resource_group: str
+    value: float,
 ) -> Dict[str, Any]:
     """
     put_metric_data へ渡す metric_data 1件分の dict を作る。
     - name: メトリクス名（例: disk_usage_percent）
+    - namespace: リソース識別子
+    - resource_group: OCI側で分類に使える文字列
+    - compartment_id: メトリクスをプッシュするコンパートメントのOCID
     - dimensions: グルーピング用ラベル（例: mountpoint=/）
     - datapoints: timestamp と value の組
-    - resource_group: OCI側で分類に使える文字列
     """
-    return {
-        "name": metric_name,
-        "dimensions": dimensions,
-        "datapoints": [{"timestamp": timestamp, "value": value}],
-        "resource_group": resource_group
-    }
+    metric_detail = oci.monitoring.models.MetricDataDetails(
+        name = metric_name,
+        namespace = namespace,
+        resource_group = resource_group,
+        compartment_id = compartment_id,
+        dimensions = dimensions,
+        datapoints = [
+            oci.monitoring.models.Datapoint(
+                timestamp = timestamp,
+                value = value
+            )
+        ]
+    )
+    return metric_detail
 
 
-def post_metrics_to_oci(compartment_id: str, namespace: str, metric_data: List[Dict[str, Any]]) -> None:
+def post_metrics_to_oci(
+    metric_data: List[Dict[str, Any]]
+) -> None:
     """
     OCI Monitoring にメトリクスを送る。
     Instance Principals を使うので、Compute上で動かすのが前提。
@@ -279,16 +293,16 @@ def post_metrics_to_oci(compartment_id: str, namespace: str, metric_data: List[D
 
     # 環境変数 OCI_REGION があれば明示（無くても動くケースは多い）
     region = get_region()
-    client = oci.monitoring.MonitoringClient(config={"region": region} if region else {}, signer=signer)
+    service_endpoint = f"https://telemetry-ingestion.{region}.oraclecloud.com"
+    client = oci.monitoring.MonitoringClient(config={"region": region} if region else {}, signer=signer, service_endpoint=service_endpoint)
 
-    # put_metric_data に渡す詳細（compartment / namespace / metrics）
-    details = oci.monitoring.models.PutMetricDataDetails(
-        compartment_id=compartment_id,
-        namespace=namespace,
-        metric_data=metric_data
+    # put_metric_data に渡すデータポイントの詳細
+    details = oci.monitoring.models.PostMetricDataDetails(
+        metric_data = metric_data
     )
 
-    resp = client.put_metric_data(details)
+    # メトリクスをプッシュ
+    resp = client.post_metric_data(details)
     LOG.info("put_metric_data status=%s", resp.status)
 
     # 失敗メトリクスがあれば警告ログ
@@ -319,6 +333,7 @@ def main() -> int:
 
     # 設定読み込み
     cfg = load_config(args.config)
+    compartment_id = get_compartment_ocid()
 
     # agent 設定（namespace / resource_group）
     agent = cfg.get("agent", {})
@@ -340,23 +355,23 @@ def main() -> int:
     # ---- 送信用のメトリクス配列を組み立て
     metric_data: List[Dict[str, Any]] = []
 
-    # disk: mountpoint / fstype を dimensions に入れて送る
+    # disk: filesystem / mountpoint を dimensions に入れて送る
     for d in disks:
-        dims = {"mountpoint": d["mountpoint"], "fstype": d["fstype"]}
+        dims = {"devicename": d["filesystem"], "mountpoint": d["mountpoint"]}
 
         metric_data.append(build_metric_payload(
-            "disk_usage_percent", float(d["usage_percent"]), dims, ts, resource_group
+            "disk_usage_percent", namespace, resource_group, compartment_id, dims, ts, float(d["usage_percent"])
         ))
         metric_data.append(build_metric_payload(
-            "disk_available_percent", float(d["available_percent"]), dims, ts, resource_group
+            "disk_available_percent", namespace, resource_group, compartment_id, dims, ts, float(d["available_percent"])
         ))
 
     # proc: dimension を dimensions に入れて送る
-    for p in procs:
-        dims = {"dimension": p["dimension"]}
-        metric_data.append(build_metric_payload(
-            "process_count", float(p["process_count"]), dims, ts, resource_group
-        ))
+    # for p in procs:
+    #     dims = {"dimension": p["dimension"]}
+    #     metric_data.append(build_metric_payload(
+    #         "process_count", float(p["process_count"]), dims, ts, resource_group
+    #     ))
 
     # dry-run: 送信せずJSON表示して終了（動作確認用）
     if args.dry_run:
@@ -370,8 +385,7 @@ def main() -> int:
         return 0
 
     # 実送信：compartment OCID を取得して OCI Monitoring に送る
-    compartment_id = get_compartment_ocid()
-    post_metrics_to_oci(compartment_id, namespace, metric_data)
+    post_metrics_to_oci(metric_data)
     return 0
 
 
