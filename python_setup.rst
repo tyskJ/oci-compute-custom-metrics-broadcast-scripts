@@ -155,6 +155,35 @@ Windows
 
   * ターミナルを再起動し、``pip3 --version`` でバージョンが表示されればOKです
 
+4. 必要パッケージインストール
+---------------------------------------------------------------------
+.. code-block:: powershell
+
+  pip3 install --upgrade pip --root-user-action=ignore
+  pip3 install oci --root-user-action=ignore
+
+.. note::
+  
+  以下コマンドを実行して ``successfully`` がでればOK
+
+.. code-block:: powershell
+
+  @'
+  import oci
+  print("oci imported successfully")
+  '@ | python3 -
+
+.. note::
+
+  以下コマンドでインストール先が確認できます
+
+.. code-block:: bash
+
+  @'
+  import oci
+  print(oci.__file__)
+  '@ | python3 -
+
 参考資料
 =====================================================================
 リファレンス
