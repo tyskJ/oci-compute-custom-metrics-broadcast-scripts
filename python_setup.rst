@@ -184,6 +184,29 @@ Windows
   print(oci.__file__)
   '@ | python3 -
 
+5. 設定ファイル & スクリプトファイル作成
+---------------------------------------------------------------------
+
+.. note::
+
+  * 管理者権限で ``Powershell`` を起動して実行します
+
+5-1. 専用フォルダ作成
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: powershell
+
+  New-Item "C:\Program Files\CustomMetrics" -ItemType Directory -ErrorAction SilentlyContinue
+
+5-2. 設定ファイル作成
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`C:\Program Files\CustomMetrics\oci-custom-agent-windows.json <./envs/config/windows/oci-custom-agent-windows.json>`_
+
+5-3. スクリプトファイル作成
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`C:\Program Files\CustomMetrics\oci_custom_agent_windows.py <./envs/config/windows/oci_custom_agent_windows.py>`_
+
 参考資料
 =====================================================================
 リファレンス

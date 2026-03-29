@@ -1,0 +1,15 @@
+{
+  "agent": {
+    "namespace": "custom_windows_server",
+    "resource_group": "os"
+  },
+  "disk": {
+    "drive_letters": ["c"]
+  },
+  "procstat": [
+    {
+      "name": "nginx",
+      "pattern": "nginx.exe"
+    }
+  ]
+}
