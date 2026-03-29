@@ -74,7 +74,8 @@ Linux
 
 6. 定期実行設定
 ---------------------------------------------------------------------
-* ``systemd.timer`` 設定
+6-1. ``systemd.timer`` 設定
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **/etc/systemd/system/oci-custom-agent-linux.timer**
 
@@ -92,7 +93,8 @@ Linux
   [Install]
   WantedBy=timers.target
 
-* ``systemd.service`` 設定
+6-2. ``systemd.service`` 設定
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **/etc/systemd/system/oci-custom-agent-linux.service**
 
@@ -106,7 +108,8 @@ Linux
   Type=oneshot
   ExecStart=/usr/bin/python3 /opt/oci-custom-metrics/oci_custom_agent_linux.py -c /etc/sysconfig/oci-custom-agent-linux
 
-* ``timer`` 自動起動有効化 & 起動
+6-3. ``timer`` 自動起動有効化 & 起動
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -115,6 +118,11 @@ Linux
 .. note::
 
   * ``systemctl list-timers`` にて表示されればOKです
+
+Windows
+=====================================================================
+
+
 
 参考資料
 =====================================================================
