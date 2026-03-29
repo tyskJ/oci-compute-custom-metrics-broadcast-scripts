@@ -193,3 +193,5 @@ Windows
 ブログ
 ---------------------------------------------------------------------
 * `systemd.timer 入門 <https://dev.classmethod.jp/articles/slug-btThPHViGsPt/>`_
+* `CloudWatch Agent の procstat プラグインで exe と pattern に指定するプロセス名・プロセス起動のコマンドラインを確認する方法 - DevelopersIO <https://dev.classmethod.jp/articles/cloudwatch-agent-procstat-exe-pattern/>`_
+* `CloudWatchでWindowsのプロセスを監視する - Beex Techblog <https://techblog.beex-inc.com/entry/2024/10/01/000000>`_
