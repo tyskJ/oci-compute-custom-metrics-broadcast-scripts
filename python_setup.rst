@@ -315,7 +315,6 @@ Windows
 
 .. code-block:: powershell
 
-  # 正常版
   $py = "C:\Users\custom_agent\AppData\Local\Python\bin\python3.exe"
   $script = "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py"
   $config = "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json"
@@ -329,24 +328,6 @@ Windows
 
   & $py @args
 
-.. code-block:: powershell
-
-  # 異常系
-  $py = "C:\Users\custom_agent\AppData\Local\Python\bin\python3.exe"
-  $script = "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py"
-  $config = "C:\ProgramData\oci-custom-agent\config\nosuch.json"
-
-  $args = @(
-    $script
-    "-c", $config
-    "--dry-run"
-    "-v"
-  )
-
-  & $py @args
-  
-  Get-Content C:\ProgramData\oci-custom-agent\log\error.log -Tail 50
-
 .. note::
 
   * ``python`` の場所は以下コマンドで確認すること
@@ -354,6 +335,11 @@ Windows
 .. code-block:: powershell
 
   Get-Command python3.exe -All
+
+.. code-block:: powershell
+
+  # エラーが出たら以下コマンドで確認
+  Get-Content C:\ProgramData\oci-custom-agent\log\error.log -Tail 50
 
 参考資料
 =====================================================================
