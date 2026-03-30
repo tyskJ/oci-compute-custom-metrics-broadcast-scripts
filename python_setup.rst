@@ -149,8 +149,79 @@ Windows
 * `公式 <https://www.python.org/downloads/windows/>`_ より最新のインストーラー (``MSI package``) をダウンロード
 * ``msi`` ファイルを実行してインストール
 
-2. ``Python 3`` インストール - 最新版 -
+2. 設定ファイル & スクリプトファイル作成
 ---------------------------------------------------------------------
+
+.. note::
+
+  * 管理者権限で ``Powershell`` を起動して実行します (opcユーザー)
+
+2-1. 専用ユーザー作成
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: powershell
+
+  # ===== 専用ユーザー作成（ランダムPW生成して最後に表示）=====
+  $User = "custom_agent"
+
+  # ランダムパスワード生成（英大文字/小文字/数字/記号を混ぜる）
+  Add-Type -AssemblyName System.Web
+  $PlainPassword = [System.Web.Security.Membership]::GeneratePassword(24, 4)
+
+  # SecureString に変換してユーザー作成
+  $SecurePassword = ConvertTo-SecureString $PlainPassword -AsPlainText -Force
+
+  New-LocalUser -Name $User `
+    -Password $SecurePassword `
+    -PasswordNeverExpires `
+    -AccountNeverExpires `
+    -Description "OCI custom metrics agent"
+
+  Write-Host "User created: $User"
+  Write-Host "Password (save securely): $PlainPassword"
+
+.. code-block:: powershell
+
+  Get-LocalUser -Name custom_agent | Select-Object Name, Enabled, LastLogon
+
+2-2. 専用フォルダ作成
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: powershell
+
+  New-Item -ItemType Directory -Force -Path C:\ProgramData\oci-custom-agent\log | Out-Null
+  New-Item -ItemType Directory -Force -Path C:\ProgramData\oci-custom-agent\config | Out-Null
+
+.. code-block:: powershell
+
+  # スクリプト配置フォルダ：読み取り＆実行
+  icacls C:\ProgramData\oci-custom-agent /grant custom_agent:RX
+
+  # 設定フォルダ：読み取り
+  icacls C:\ProgramData\oci-custom-agent\config /grant custom_agent:R
+
+  # ログフォルダ：書き込み（Modify）
+  icacls C:\ProgramData\oci-custom-agent\log /grant custom_agent:W
+
+
+2-3. 設定ファイル作成
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`C:\\ProgramData\\oci-custom-agent\\config\\oci-custom-agent-windows.json <./envs/config/windows/oci-custom-agent-windows.json>`_
+
+2-4. スクリプトファイル作成
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`C:\\ProgramData\\oci-custom-agent\\oci_custom_agent_windows.py <./envs/config/windows/oci_custom_agent_windows.py>`_
+
+3. ``Python 3`` インストール - 最新版 -
+---------------------------------------------------------------------
+.. code-block:: powershell
+
+  runas /user:custom_agent powershell.exe
+
+.. note:: 
+
+  * PW 入力を求められるため、ユーザー作成時のPWを入力
+
 .. code-block:: powershell
 
   py install 3
@@ -159,27 +230,57 @@ Windows
 
   * ``python3 --version`` でバージョンが表示されればOKです
 
-3. ``pip3`` への ``PATH`` を通す
+4. ``pip3`` への ``PATH`` を通す
 ---------------------------------------------------------------------
+.. code-block:: powershell
+
+  runas /user:custom_agent powershell.exe
+
+.. note:: 
+
+  * PW 入力を求められるため、ユーザー作成時のPWを入力
+
 * 下記コマンドを実行し、グローバルショートカット用ディレクトリを取得
 
 .. code-block:: powershell
 
   py isntall --refresh
 
-* 下記コマンドを ``Powershell`` で実行し、システムプロパティを起動
-* 環境変数のシステム変数に上記コマンドで出力されたディレクトリを追加
+* ``custom_agent`` ユーザー環境変数に追加
 
 .. code-block:: powershell
 
-  SystemPropertiesAdvanced
+  $pipPath = "C:\Users\custom_agent\AppData\Local\Python\bin"
+
+  $currentPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+
+  if ($currentPath -notlike "*$pipPath*") {
+      $newPath = if ([string]::IsNullOrEmpty($currentPath)) {
+          $pipPath
+      } else {
+          "$currentPath;$pipPath"
+      }
+
+      [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+      Write-Host "PATH updated for custom_agent (User scope)"
+  } else {
+      Write-Host "PATH already contains pip path"
+  }
 
 .. note::
 
   * ターミナルを再起動し、``pip3 --version`` でバージョンが表示されればOKです
 
-4. 必要パッケージインストール
+5. 必要パッケージインストール
 ---------------------------------------------------------------------
+.. code-block:: powershell
+
+  runas /user:custom_agent powershell.exe
+
+.. note:: 
+
+  * PW 入力を求められるため、ユーザー作成時のPWを入力
+
 .. code-block:: powershell
 
   pip3 install --upgrade pip --root-user-action=ignore
@@ -207,71 +308,8 @@ Windows
   print(oci.__file__)
   '@ | python3 -
 
-5. 設定ファイル & スクリプトファイル作成
+6. 試し実行
 ---------------------------------------------------------------------
-
-.. note::
-
-  * 管理者権限で ``Powershell`` を起動して実行します
-
-5-1. 専用ユーザー作成
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. code-block:: powershell
-
-  # ===== 専用ユーザー作成（ランダムPW生成して最後に表示）=====
-  $User = "custom_agent"
-
-  # ランダムパスワード生成（英大文字/小文字/数字/記号を混ぜる）
-  Add-Type -AssemblyName System.Web
-  $PlainPassword = [System.Web.Security.Membership]::GeneratePassword(24, 4)
-
-  # SecureString に変換してユーザー作成
-  $SecurePassword = ConvertTo-SecureString $PlainPassword -AsPlainText -Force
-
-  New-LocalUser -Name $User `
-    -Password $SecurePassword `
-    -PasswordNeverExpires `
-    -AccountNeverExpires `
-    -Description "OCI custom metrics agent"
-
-  Write-Host "User created: $User"
-  Write-Host "Password (save securely): $PlainPassword"
-
-.. code-block:: powershell
-
-  Get-LocalUser -Name custom_agent | Select-Object Name, Enabled, LastLogon
-
-5-2. 専用フォルダ作成
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. code-block:: powershell
-
-  New-Item -ItemType Directory -Force -Path C:\ProgramData\oci-custom-agent\log | Out-Null
-  New-Item -ItemType Directory -Force -Path C:\ProgramData\oci-custom-agent\config | Out-Null
-
-.. code-block:: powershell
-
-  # スクリプト配置フォルダ：読み取り＆実行
-  icacls C:\ProgramData\oci-custom-agent /grant custom_agent:RX
-
-  # 設定フォルダ：読み取り
-  icacls C:\ProgramData\oci-custom-agent\config /grant custom_agent:R
-
-  # ログフォルダ：書き込み（Modify）
-  icacls C:\ProgramData\oci-custom-agent\log /grant custom_agent:W
-
-
-5-3. 設定ファイル作成
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-`C:\\ProgramData\\oci-custom-agent\\config\\oci-custom-agent-windows.json <./envs/config/windows/oci-custom-agent-windows.json>`_
-
-5-4. スクリプトファイル作成
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-`C:\\ProgramData\\oci-custom-agent\\oci_custom_agent_windows.py <./envs/config/windows/oci_custom_agent_windows.py>`_
-
-5-5. 試し実行
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: powershell
 
