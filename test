@@ -1,5 +1,41 @@
-PS C:\WINDOWS\system32> py install --refresh
-Refreshing install registrations.
-
-Global shortcuts directory is not on PATH. Add it for easy access to global Python aliases.
-Directory to add: C:\Users\custom_agent\AppData\Local\Python\bin
+PS C:\WINDOWS\system32> $py = "C:\Users\custom_agent\AppData\Local\Python\bin\python3.exe"
+>> $script = "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py"
+>> $config = "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json"
+>>
+>> $args = @(
+>>   $script
+>>   "-c", $config
+>>   "--dry-run"
+>>   "-v"
+>> )
+>>
+>> & $py @args
+2026-03-30 05:05:52,860 INFO oci_custom_agent_windows: error log enabled: path=C:\ProgramData\oci-custom-agent\log\error.log (daily rotation, keep=7 days, utc=False)
+2026-03-30 05:05:53,421 ERROR oci_custom_agent_windows: fatal: Object of type MetricDataDetails is not JSON serializable
+Traceback (most recent call last):
+  File "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py", line 518, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py", line 502, in main
+    print(json.dumps({
+          ~~~~~~~~~~^^
+        "timestamp": ts,
+        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        "metric_data": metric_data,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, ensure_ascii=False, indent=2))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\custom_agent\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 242, in dumps
+    **kw).encode(obj)
+          ~~~~~~^^^^^
+  File "C:\Users\custom_agent\AppData\Local\Python\pythoncore-3.14-64\Lib\json\encoder.py", line 202, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+  File "C:\Users\custom_agent\AppData\Local\Python\pythoncore-3.14-64\Lib\json\encoder.py", line 263, in iterencode
+    return _iterencode(o, 0)
+  File "C:\Users\custom_agent\AppData\Local\Python\pythoncore-3.14-64\Lib\json\encoder.py", line 182, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+                    f'is not JSON serializable')
+TypeError: Object of type MetricDataDetails is not JSON serializable
+when serializing list item 0
+when serializing dict item 'metric_data'
