@@ -285,14 +285,14 @@ Windows
 
   # 正常版
 
-  "C:\Program Files\PyManager\python3.exe" -u `
+  "C:\Program Files\PyManager\python3.exe" `
     C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py `
     -c C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json `
     --dry-run -v
 
 
   # 異常系
-  "C:\Program Files\PyManager\python3.exe" -u `
+  "C:\Program Files\PyManager\python3.exe" `
     C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py `
     -c C:\ProgramData\oci-custom-agent\config\nosuch.json
   
