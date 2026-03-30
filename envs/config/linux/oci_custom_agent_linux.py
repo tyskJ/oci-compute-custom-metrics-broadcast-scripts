@@ -71,7 +71,7 @@ def fetch_instance_metadata(timeout_seconds: int = 2) -> Optional[Dict[str, Any]
         return None
 
 
-def get_compartment_ocid() -> str:
+def get_compartment_ocid(meta: Optional[Dict[str, Any]] = None) -> str:
     """
     compartment OCID を取得する（送信時に必須）。
     取得優先度：
@@ -82,7 +82,10 @@ def get_compartment_ocid() -> str:
     if env:
         return env
 
-    meta = fetch_instance_metadata()
+    # meta が渡されていなければ、その場で取りにいく（後方互換）
+    if meta is None:
+        meta = fetch_instance_metadata()
+
     if meta and meta.get("compartmentId"):
         return meta["compartmentId"]
 
@@ -91,20 +94,22 @@ def get_compartment_ocid() -> str:
         "環境変数 COMPARTMENT_OCID を設定するか、OCI Compute 上で実行してください。"
     )
 
-def get_region() -> str:
+
+def get_region(meta: Optional[Dict[str, Any]] = None) -> str:
     """
     OCIのリージョンを取得する
     優先順位：
       1) 環境変数 OCI_REGION
       2) Instance Metadata
     """
-    # ① 環境変数
     env = os.environ.get("OCI_REGION", "").strip()
     if env:
         return env
 
-    # ② Instance Metadata
-    meta = fetch_instance_metadata()
+    # meta が渡されていなければ、その場で取りにいく（後方互換）
+    if meta is None:
+        meta = fetch_instance_metadata()
+
     if meta:
         # region または canonicalRegionName が入っている場合がある
         region = meta.get("region") or meta.get("canonicalRegionName")
@@ -278,7 +283,8 @@ def build_metric_payload(
 
 
 def post_metrics_to_oci(
-    metric_data: List[Dict[str, Any]]
+    metric_data: List[Dict[str, Any]],
+    meta: Optional[Dict[str, Any]] = None
 ) -> None:
     """
     OCI Monitoring にメトリクスを送る。
@@ -291,7 +297,7 @@ def post_metrics_to_oci(
     signer = signers.InstancePrincipalsSecurityTokenSigner()
 
     # 環境変数 OCI_REGION があれば明示（無くても動くケースは多い）
-    region = get_region()
+    region = get_region(meta)
     service_endpoint = f"https://telemetry-ingestion.{region}.oraclecloud.com"
     client = oci.monitoring.MonitoringClient(config={"region": region} if region else {}, signer=signer, service_endpoint=service_endpoint)
 
@@ -332,7 +338,12 @@ def main() -> int:
 
     # 設定読み込み
     cfg = load_config(args.config)
-    compartment_id = get_compartment_ocid()
+
+    # Instance Metadata はここで 1回だけ取得して使い回す
+    meta = fetch_instance_metadata()
+
+    # compartment / region をメタデータ使い回しで取得
+    compartment_id = get_compartment_ocid(meta)
 
     # agent 設定（namespace / resource_group）
     agent = cfg.get("agent", {})
@@ -384,7 +395,7 @@ def main() -> int:
         return 0
 
     # 実送信：compartment OCID を取得して OCI Monitoring に送る
-    post_metrics_to_oci(metric_data)
+    post_metrics_to_oci(metric_data, meta)
     return 0
 
 
