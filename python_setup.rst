@@ -119,6 +119,7 @@ Linux
   # セキュリティ/事故防止（任意だがおすすめ）
   NoNewPrivileges=true
   PrivateTmp=true
+  # 作られるログファイル権限を絞る（例：0640）
   UMask=0027
 
 
