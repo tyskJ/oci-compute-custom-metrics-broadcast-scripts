@@ -1,0 +1,26 @@
+PS C:\WINDOWS\system32> "C:\Program Files\PyManager\python3.exe" `
+>> "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py" `
+>> -c "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json" `
+>> --dry-run -v
+At line:2 char:1
++ "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py" `
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unexpected token '"C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py"' in expression or statement.
+At line:3 char:1
++ -c "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.j ...
++ ~~
+Unexpected token '-c' in expression or statement.
+At line:3 char:4
++ -c "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.j ...
++    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unexpected token '"C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json"' in expression or statement.
+At line:4 char:3
++ --dry-run -v
++   ~~~~~~~
+Unexpected token 'dry-run' in expression or statement.
+At line:3 char:4
++ -c "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.j ...
++    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The '--' operator works only on variables or on properties.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
