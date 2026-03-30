@@ -342,7 +342,11 @@ def post_metrics_to_oci(
     # 環境変数 OCI_REGION があれば明示（無くても動くケースは多い）
     region = get_region(meta)
     service_endpoint = f"https://telemetry-ingestion.{region}.oraclecloud.com"
-    client = oci.monitoring.MonitoringClient(config={"region": region} if region else {}, signer=signer, service_endpoint=service_endpoint)
+    client = oci.monitoring.MonitoringClient(
+        config={"region": region} if region else {}, 
+        signer=signer, 
+        service_endpoint=service_endpoint
+    )
 
     # put_metric_data に渡すデータポイントの詳細
     details = oci.monitoring.models.PostMetricDataDetails(
@@ -437,7 +441,7 @@ def main() -> int:
             "disk_available_percent", namespace, resource_group, compartment_id, dims, ts, float(d["available_percent"])
         ))
 
-    # proc: dimension を dimensions に入れて送る
+    # proc
     for p in procs:
         dims = {"name": p["dimension"]}
         metric_data.append(build_metric_payload(
