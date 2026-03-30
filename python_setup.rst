@@ -104,9 +104,23 @@ Linux
   Description=OCI Custom Metrics Agent
 
   [Service]
-  User=custom_agent
   Type=oneshot
+  User=custom_agent
+  Group=custom_agent
+  # journald に通常ログを出す
+  StandardOutput=journal
+  StandardError=journal
+  # /var/log/oci-custom-agent を systemd が作る（権限事故防止）
+  LogsDirectory=oci-custom-agent
+  # 作成時のパーミッション（必要なら調整）
+  LogsDirectoryMode=0750
+  # 実行
   ExecStart=/usr/bin/python3 /opt/oci-custom-metrics/oci_custom_agent_linux.py -c /etc/sysconfig/oci-custom-agent-linux
+  # セキュリティ/事故防止（任意だがおすすめ）
+  NoNewPrivileges=true
+  PrivateTmp=true
+  UMask=0027
+
 
 6-3. ``timer`` 自動起動有効化 & 起動
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
