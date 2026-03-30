@@ -98,7 +98,7 @@ Linux
 
 **/etc/systemd/system/oci-custom-agent-linux.service**
 
-.. code-block::
+.. code-block:: bash
 
   [Unit]
   Description=OCI Custom Metrics Agent
