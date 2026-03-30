@@ -504,7 +504,7 @@ def main() -> int:
             "namespace": namespace,
             "resource_group": resource_group,
             "metric_count": len(metric_data),
-            "metric_data": metric_data,
+            "metric_data": [oci.util.to_dict(m) for m in metric_data],
         }, ensure_ascii=False, indent=2))
         return 0
 
