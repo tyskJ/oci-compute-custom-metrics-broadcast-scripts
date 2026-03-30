@@ -240,12 +240,6 @@ Windows
 
   * PW 入力を求められるため、ユーザー作成時のPWを入力
 
-* 下記コマンドを実行し、グローバルショートカット用ディレクトリを取得
-
-.. code-block:: powershell
-
-  py isntall --refresh
-
 * ``custom_agent`` ユーザー環境変数に追加
 
 .. code-block:: powershell
