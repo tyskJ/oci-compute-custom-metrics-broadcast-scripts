@@ -341,6 +341,91 @@ Windows
   # エラーが出たら以下コマンドで確認
   Get-Content C:\ProgramData\oci-custom-agent\log\error.log -Tail 50
 
+7. 定期実行設定
+---------------------------------------------------------------------
+7-1. バッチジョブ権限付与
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* ローカルセキュリティポリシー起動
+
+.. image:: ./doc/image/pic1.png
+  :scale: 100%
+
+* ``ローカルポリシー`` → ``ユーザー権限の割り当て`` → ``バッチジョブとしてのログオン`` を右クリックし ``プロパティ`` をクリック
+
+.. image:: ./doc/image/pic2.png
+  :scale: 100%
+
+* ``ユーザーまたはグループの追加`` をクリック
+
+.. image:: ./doc/image/pic3.png
+  :scale: 100%
+
+* ``custom_agent`` と入力し ``OK`` をクリック
+
+.. image:: ./doc/image/pic4.png
+  :scale: 100%
+
+* ``適用`` をクリックして完了
+
+.. image:: ./doc/image/pic5.png
+  :scale: 100%
+
+7-2. タスクスケジューラー登録
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* タスクスケジューラー起動
+
+.. image:: ./doc/image/pic6.png
+  :scale: 100%
+
+* ``タスクの作成`` をクリック
+
+.. image:: ./doc/image/pic7.png
+  :scale: 100%
+
+* ``全般`` を以下の通り設定
+
+.. image:: ./doc/image/pic8.png
+  :scale: 100%
+
+* ``トリガー`` を以下の通り設定
+
+.. image:: ./doc/image/pic9.png
+  :scale: 100%
+
+* ``操作`` を以下の通り設定
+
+.. image:: ./doc/image/pic10.png
+  :scale: 100%
+
+.. code-block:: bash
+
+  # プログラム/スクリプト
+  C:\Users\custom_agent\AppData\Local\Python\bin\python3.exe
+  # 引数の追加（オプション）
+  oci_custom_agent_windows.py -c "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json"
+  # 開始（オプション）
+  C:\ProgramData\oci-custom-agent
+
+* ``条件`` を以下の通り設定
+
+.. image:: ./doc/image/pic11.png
+  :scale: 100%
+
+* ``設定`` を以下の通り設定 → ``OK`` をクリック
+
+.. image:: ./doc/image/pic12.png
+  :scale: 100%
+
+* ``custom_agent`` のパスワードを入力し ``OK`` をクリックして完了
+
+.. image:: ./doc/image/pic13.png
+  :scale: 100%
+
+* ``すべてのタスク履歴を有効にする`` をクリックして、タスク実行履歴を有効化
+
+.. image:: ./doc/image/pic14.png
+  :scale: 100%
+
 参考資料
 =====================================================================
 リファレンス
@@ -352,3 +437,4 @@ Windows
 * `systemd.timer 入門 <https://dev.classmethod.jp/articles/slug-btThPHViGsPt/>`_
 * `CloudWatch Agent の procstat プラグインで exe と pattern に指定するプロセス名・プロセス起動のコマンドラインを確認する方法 - DevelopersIO <https://dev.classmethod.jp/articles/cloudwatch-agent-procstat-exe-pattern/>`_
 * `CloudWatchでWindowsのプロセスを監視する - Beex Techblog <https://techblog.beex-inc.com/entry/2024/10/01/000000>`_
+* `「バッチジョブとしてログオンの権利が必要」…タスクスケジューラ警告の対処方法 <https://se-abeaver.com/logon-as-a-batchjob/>`_
