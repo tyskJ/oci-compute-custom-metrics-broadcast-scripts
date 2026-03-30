@@ -263,12 +263,12 @@ Windows
 5-3. 設定ファイル作成
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json <./envs/config/windows/oci-custom-agent-windows.json>`_
+`C:\\ProgramData\\oci-custom-agent\\config\\oci-custom-agent-windows.json <./envs/config/windows/oci-custom-agent-windows.json>`_
 
 5-4. スクリプトファイル作成
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py <./envs/config/windows/oci_custom_agent_windows.py>`_
+`C:\\ProgramData\\oci-custom-agent\\oci_custom_agent_windows.py <./envs/config/windows/oci_custom_agent_windows.py>`_
 
 参考資料
 =====================================================================
