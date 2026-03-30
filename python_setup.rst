@@ -214,21 +214,61 @@ Windows
 
   * 管理者権限で ``Powershell`` を起動して実行します
 
-5-1. 専用フォルダ作成
+5-1. 専用ユーザー作成
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. code-block:: powershell
 
-  New-Item "C:\Program Files\CustomMetrics" -ItemType Directory -ErrorAction SilentlyContinue
+  # ===== 専用ユーザー作成（ランダムPW生成して最後に表示）=====
+  $User = "custom_agent"
 
-5-2. 設定ファイル作成
+  # ランダムパスワード生成（英大文字/小文字/数字/記号を混ぜる）
+  Add-Type -AssemblyName System.Web
+  $PlainPassword = [System.Web.Security.Membership]::GeneratePassword(24, 4)
+
+  # SecureString に変換してユーザー作成
+  $SecurePassword = ConvertTo-SecureString $PlainPassword -AsPlainText -Force
+
+  New-LocalUser -Name $User `
+    -Password $SecurePassword `
+    -PasswordNeverExpires `
+    -AccountNeverExpires `
+    -Description "OCI custom metrics agent"
+
+  Write-Host "User created: $User"
+  Write-Host "Password (save securely): $PlainPassword"
+
+.. code-block:: powershell
+
+  Get-LocalUser -Name custom_agent | Select-Object Name, Enabled, LastLogon
+
+5-2. 専用フォルダ作成
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: powershell
+
+  New-Item -ItemType Directory -Force -Path C:\ProgramData\oci-custom-agent\log | Out-Null
+  New-Item -ItemType Directory -Force -Path C:\ProgramData\oci-custom-agent\config | Out-Null
+
+.. code-block:: powershell
+
+  # スクリプト配置フォルダ：読み取り＆実行
+  icacls C:\ProgramData\oci-custom-agent /grant custom_agent:(RX) /T
+
+  # 設定フォルダ：読み取り
+  icacls C:\ProgramData\oci-custom-agent\config /grant custom_agent:(R) /T
+
+  # ログフォルダ：書き込み（Modify）
+  icacls C:\ProgramData\oci-custom-agent\log /grant custom_agent:(M) /T
+
+
+5-3. 設定ファイル作成
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`C:\Program Files\CustomMetrics\oci-custom-agent-windows.json <./envs/config/windows/oci-custom-agent-windows.json>`_
+`C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json <./envs/config/windows/oci-custom-agent-windows.json>`_
 
-5-3. スクリプトファイル作成
+5-4. スクリプトファイル作成
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`C:\Program Files\CustomMetrics\oci_custom_agent_windows.py <./envs/config/windows/oci_custom_agent_windows.py>`_
+`C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py <./envs/config/windows/oci_custom_agent_windows.py>`_
 
 参考資料
 =====================================================================
