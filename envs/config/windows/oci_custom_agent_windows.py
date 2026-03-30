@@ -467,7 +467,7 @@ def post_metrics_to_oci(
 # -----------------------------
 def main() -> int:
     parser = argparse.ArgumentParser(description="Collect disk/proc metrics and push to OCI Monitoring (Windows).")
-    parser.add_argument("-c", "--config", default=r"C:\ProgramData\oci-custom-agent\oci-custom-agent-windows.json", help="config json path")
+    parser.add_argument("-c", "--config", default=r"C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json", help="config json path")
     parser.add_argument("--dry-run", action="store_true", help="collect only (do not post to OCI).")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose log")
     args = parser.parse_args()
