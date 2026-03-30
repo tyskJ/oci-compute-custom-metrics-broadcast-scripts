@@ -5,6 +5,9 @@
 OCI Compute 上で動くカスタムメトリクス送信スクリプト（Linux / 精度重視）。
 - disk: df -PT の結果から % を小数2桁で計算して送信
 - procstat: ps -eo args（cmdline）に正規表現一致するプロセス数を送信
+- logging:
+    - 通常ログ：stdout（systemd/journald）
+    - ERROR以上：agent.error_log_path にも日次ローテで出力
 """
 
 # --- 標準ライブラリ（Pythonに最初から入っている）---
@@ -17,6 +20,7 @@ import re                # 正規表現（procstat の pattern 用）
 import subprocess        # df / ps コマンドを実行する
 import sys               # exit code（終了コード）を返す
 import urllib.request    # OCI Instance Metadata(169.254.169.254)へHTTPアクセス
+from logging.handlers import TimedRotatingFileHandler  # 日次ローテ
 from typing import Any, Dict, List, Optional  # 型ヒント（読みやすさUP）
 
 # --- OCI SDK（別途pipインストールが必要）---
@@ -50,6 +54,45 @@ def load_config(path: str) -> Dict[str, Any]:
     """JSON設定ファイルを読み込んで dict として返す"""
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+# -----------------------------
+# Utility: Logging（ERRORだけファイルに日次ローテ）
+# -----------------------------
+def add_daily_error_file_handler(
+    path: str, 
+    backup_days: int = 14, 
+    use_utc: bool = False
+) -> None:
+    """
+    ERROR以上だけをファイルへ出し、日次でローテーションする。
+
+    - path: /var/log/oci-custom-agent/error.log
+    - backup_days: 保持日数（例: 7 / 14 / 30）
+    - use_utc: TrueならUTC基準で日付を切る。JST運用なら False 推奨。
+
+    delay=True により、エラーが発生するまでファイルを作成しない。
+    """
+    root = logging.getLogger()
+
+    # 二重登録防止（念のため）
+    for h in root.handlers:
+        if isinstance(h, TimedRotatingFileHandler) and getattr(h, "baseFilename", "") == path:
+            return
+
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+    fh = TimedRotatingFileHandler(
+        filename=path,
+        when="midnight",        # 日付が変わるタイミングでローテ
+        interval=1,             # 1日ごと
+        backupCount=backup_days,
+        encoding="utf-8",
+        utc=use_utc,
+        delay=True              # ★重要：エラーが出るまで error.log を作らない
+    )
+    fh.setLevel(logging.ERROR)  # ★ERROR以上だけファイルへ
+    fh.setFormatter(fmt)
+    root.addHandler(fh)
 
 
 # -----------------------------
@@ -330,28 +373,46 @@ def main() -> int:
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose log")
     args = parser.parse_args()
 
-    # ログ出力（-v なら DEBUG まで出す）
+    # まず stdout 向けログを初期化（config 読み込みエラーも journald に出すため）
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
 
+    # 収集時刻（UTC）
+    ts = utc_now_rfc3339()
+
     # 設定読み込み
     cfg = load_config(args.config)
-
-    # Instance Metadata はここで 1回だけ取得して使い回す
-    meta = fetch_instance_metadata()
-
-    # compartment / region をメタデータ使い回しで取得
-    compartment_id = get_compartment_ocid(meta)
 
     # agent 設定（namespace / resource_group）
     agent = cfg.get("agent", {})
     namespace = str(agent.get("namespace", "custom_oracle_linux"))
     resource_group = str(agent.get("resource_group", "os"))
 
-    # 収集時刻（UTC）
-    ts = utc_now_rfc3339()
+    # --- error.log（ERROR以上のみ・日次ローテ）を config から有効化
+    error_log_path = str(agent.get("error_log_path", "/var/log/oci-custom-agent/error.log")).strip()
+    error_log_backup_days = int(agent.get("error_log_backup_days", 7))
+    error_log_use_utc = bool(agent.get("error_log_use_utc", False))
+
+    if error_log_path:
+        add_daily_error_file_handler(
+            path=error_log_path,
+            backup_days=error_log_backup_days,
+            use_utc=error_log_use_utc
+        )
+        LOG.info(
+            "error log enabled: path=%s (daily rotation, keep=%d days, utc=%s)",
+            error_log_path, error_log_backup_days, error_log_use_utc
+        )
+    else:
+        LOG.info("error log disabled (agent.error_log_path is empty)")
+
+    # Instance Metadata はここで 1回だけ取得して使い回す
+    meta = fetch_instance_metadata()
+
+    # compartment / region をメタデータ使い回しで取得
+    compartment_id = get_compartment_ocid(meta)
 
     # ---- disk 収集
     disk_cfg = cfg.get("disk", {})

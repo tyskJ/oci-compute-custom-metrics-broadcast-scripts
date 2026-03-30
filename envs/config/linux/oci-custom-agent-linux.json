@@ -1,7 +1,10 @@
 {
   "agent": {
     "namespace": "custom_oracle_linux",
-    "resource_group": "os"
+    "resource_group": "os",
+    "error_log_path": "/var/log/oci-custom-agent/error.log",
+    "error_log_backup_days": 7,
+    "error_log_use_utc": false
   },
   "disk": {
     "exclude_fstypes": [
