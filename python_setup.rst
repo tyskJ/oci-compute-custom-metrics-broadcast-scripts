@@ -316,7 +316,7 @@ Windows
 .. code-block:: powershell
 
   # 正常版
-  $py = "C:\Program Files\PyManager\python3.exe"
+  $py = "C:\Users\custom_agent\AppData\Local\Python\bin\python3.exe"
   $script = "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py"
   $config = "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json"
 
@@ -332,9 +332,18 @@ Windows
 .. code-block:: powershell
 
   # 異常系
-  "C:\Program Files\PyManager\python3.exe" `
-    C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py `
-    -c C:\ProgramData\oci-custom-agent\config\nosuch.json
+  $py = "C:\Users\custom_agent\AppData\Local\Python\bin\python3.exe"
+  $script = "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py"
+  $config = "C:\ProgramData\oci-custom-agent\config\nosuch.json"
+
+  $args = @(
+    $script
+    "-c", $config
+    "--dry-run"
+    "-v"
+  )
+
+  & $py @args
   
   Get-Content C:\ProgramData\oci-custom-agent\log\error.log -Tail 50
 
@@ -344,7 +353,7 @@ Windows
 
 .. code-block:: powershell
 
-  Get-Command python3.exe
+  Get-Command python3.exe -All
 
 参考資料
 =====================================================================
