@@ -284,17 +284,16 @@ def collect_disks(drive_letters: List[str]) -> List[Dict[str, Any]]:
 
 
 # -----------------------------
-# Collect: Procstat（CommandLine regex一致数）
+# Collect: Procstat
 # -----------------------------
-def list_cmdlines() -> List[str]:
+def list_process_entries() -> List[Dict[str, Any]]:
     """
-    Get-WmiObject -Class Win32_Process | Select-Object CommandLine の結果から
-    CommandLine（nullを除く）を配列で返す。
+    Win32_Process の Name と CommandLine を取得して配列で返す。
+    CommandLine が null のプロセスがあるので、Python側で吸収する。
     """
     ps = (
         "Get-WmiObject -Class Win32_Process | "
-        "Select-Object -ExpandProperty CommandLine | "
-        "Where-Object { $_ -ne $null -and $_ -ne '' } | "
+        "Select-Object Name, CommandLine | "
         "ConvertTo-Json -Compress"
     )
     obj = run_powershell_json(ps)
@@ -302,19 +301,43 @@ def list_cmdlines() -> List[str]:
     if obj is None:
         return []
 
-    # 1件だけだと文字列、複数だと list になるので吸収
-    if isinstance(obj, str):
+    # 1件だけだと dict、複数だと list になるので吸収
+    if isinstance(obj, dict):
         return [obj]
     if isinstance(obj, list):
-        # 念のため文字列以外は除外
-        return [x for x in obj if isinstance(x, str)]
+        return [x for x in obj if isinstance(x, dict)]
     return []
 
 
 def collect_procstat(proc_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    cmdlines = list_cmdlines()
+    """
+    config の procstat ルールを元に、pattern（正規表現）に一致するプロセス数を数える（Windows版）。
+
+    仕様：
+      - 取得元：Win32_Process の Name / CommandLine
+      - 検索対象：CommandLine が取れればそれ、Null/空なら Name にフォールバック
+      - ログ（verbose時のみ）：
+          1) CommandLine欠損率（全体）を1回だけ
+          2) ルールごとの一致件数と、Nameフォールバック一致件数を1回だけ
+    """
+    procs = list_process_entries()  # [{"Name": "...", "CommandLine": "..."}, ...]
     results: List[Dict[str, Any]] = []
 
+    # --- CommandLine欠損状況を全体で1回だけログ
+    total = len(procs)
+    missing_cmdline = sum(
+        1 for p in procs
+        if not str(p.get("CommandLine") or "").strip()
+    )
+    if total > 0:
+        LOG.debug(
+            "procstat: CommandLine missing=%d / total=%d (%.1f%%)",
+            missing_cmdline, total, (missing_cmdline / total) * 100.0
+        )
+    else:
+        LOG.debug("procstat: no processes returned from WMI")
+
+    # --- ルールごとの評価
     for rule in proc_rules or []:
         pattern = (rule.get("pattern") or "").strip()
         if not pattern:
@@ -322,15 +345,37 @@ def collect_procstat(proc_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
         dim = (rule.get("name") or "unknown").strip() or "unknown"
 
+        # 正規表現としてコンパイル（不正なら例外で気づけるようにする）
         try:
             regex = re.compile(pattern)
         except re.error as e:
             raise RuntimeError(f"invalid regex for procstat: {pattern} ({e})")
 
         count = 0
-        for cmdline in cmdlines:
-            if regex.search(cmdline):
+        matched_by_name_fallback = 0  # --- 追加提案(2): Nameフォールバックで一致した数
+
+        for p in procs:
+            name = str(p.get("Name") or "").strip()
+            cmd = str(p.get("CommandLine") or "").strip()
+
+            # ★フォールバック：CommandLine が空なら Name を検索対象にする
+            if cmd:
+                target = cmd
+                used_fallback = False
+            else:
+                target = name
+                used_fallback = True
+
+            if target and regex.search(target):
                 count += 1
+                if used_fallback:
+                    matched_by_name_fallback += 1
+
+        # --- ルールごとの一致状況を1回だけログ
+        LOG.debug(
+            "procstat rule=%s pattern=%s count=%d (matched_by_name_fallback=%d)",
+            dim, pattern, count, matched_by_name_fallback
+        )
 
         results.append({
             "dimension": dim,
@@ -339,7 +384,6 @@ def collect_procstat(proc_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         })
 
     return results
-
 
 # -----------------------------
 # OCI Monitoring: Metric payload
