@@ -134,6 +134,14 @@ Linux
 
   * ``systemctl list-timers`` にて表示されればOKです
 
+6-4. 実行確認
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+  journalctl -u oci-custom-agent-linux.timer
+  journalctl -u oci-custom-agent-linux.service
+
 Windows
 =====================================================================
 1. ``Python Install Manager`` インストール
