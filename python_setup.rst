@@ -251,13 +251,13 @@ Windows
 .. code-block:: powershell
 
   # スクリプト配置フォルダ：読み取り＆実行
-  icacls C:\ProgramData\oci-custom-agent /grant custom_agent:(RX) /T
+  icacls C:\ProgramData\oci-custom-agent /grant custom_agent:RX
 
   # 設定フォルダ：読み取り
-  icacls C:\ProgramData\oci-custom-agent\config /grant custom_agent:(R) /T
+  icacls C:\ProgramData\oci-custom-agent\config /grant custom_agent:R
 
   # ログフォルダ：書き込み（Modify）
-  icacls C:\ProgramData\oci-custom-agent\log /grant custom_agent:(M) /T
+  icacls C:\ProgramData\oci-custom-agent\log /grant custom_agent:W
 
 
 5-3. 設定ファイル作成
