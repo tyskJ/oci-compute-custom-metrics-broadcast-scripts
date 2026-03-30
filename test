@@ -1,26 +1,24 @@
-PS C:\WINDOWS\system32> "C:\Program Files\PyManager\python3.exe" `
->> "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py" `
->> -c "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json" `
->> --dry-run -v
-At line:2 char:1
-+ "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py" `
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Unexpected token '"C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py"' in expression or statement.
-At line:3 char:1
-+ -c "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.j ...
-+ ~~
-Unexpected token '-c' in expression or statement.
-At line:3 char:4
-+ -c "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.j ...
-+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Unexpected token '"C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json"' in expression or statement.
-At line:4 char:3
-+ --dry-run -v
-+   ~~~~~~~
-Unexpected token 'dry-run' in expression or statement.
-At line:3 char:4
-+ -c "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.j ...
-+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The '--' operator works only on variables or on properties.
-    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-    + FullyQualifiedErrorId : UnexpectedToken
+PS C:\WINDOWS\system32> # 正常版
+>> $py = "C:\Program Files\PyManager\python3.exe"
+>> $script = "C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py"
+>> $config = "C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json"
+>>
+>> $args = @(
+>>   $script
+>>   "-c", $config
+>>   "--dry-run"
+>>   "-v"
+>> )
+>>
+>> & $py @args
+Python install manager was successfully updated to 26.0.
+
+This update adds global shortcuts for installed scripts such as pip.exe.
+Use py install --refresh to update all shortcuts.
+This will be needed after installing new scripts, as it is not run automatically.
+
+********************************************************************************
+To see all available commands, run 'py help'
+********************************************************************************
+[ERROR] INTERNAL ERROR: NoInstallsError: No runtimes are installed. Try running "py install default" first.
+[ERROR] Internal error 0x00000001. Please report to https://github.com/python/pymanager
