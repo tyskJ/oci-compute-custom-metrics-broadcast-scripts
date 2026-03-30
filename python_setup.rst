@@ -270,6 +270,42 @@ Windows
 
 `C:\\ProgramData\\oci-custom-agent\\oci_custom_agent_windows.py <./envs/config/windows/oci_custom_agent_windows.py>`_
 
+5-5. 試し実行
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: powershell
+
+  runas /user:custom_agent powershell.exe
+
+.. note:: 
+
+  * PW 入力を求められるため、ユーザー作成時のPWを入力
+
+.. code-block:: powershell
+
+  # 正常版
+
+  "C:\Program Files\PyManager\python3.exe" -u `
+    C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py `
+    -c C:\ProgramData\oci-custom-agent\config\oci-custom-agent-windows.json `
+    --dry-run -v
+
+
+  # 異常系
+  "C:\Program Files\PyManager\python3.exe" -u `
+    C:\ProgramData\oci-custom-agent\oci_custom_agent_windows.py `
+    -c C:\ProgramData\oci-custom-agent\config\nosuch.json
+  
+  Get-Content C:\ProgramData\oci-custom-agent\log\error.log -Tail 50
+
+.. note::
+
+  * ``python`` の場所は以下コマンドで確認すること
+
+.. code-block:: powershell
+
+  Get-Command python3.exe
+
 参考資料
 =====================================================================
 リファレンス
