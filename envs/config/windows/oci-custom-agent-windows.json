@@ -1,7 +1,10 @@
 {
   "agent": {
     "namespace": "custom_windows_server",
-    "resource_group": "os"
+    "resource_group": "os",
+    "error_log_path": "C:\\ProgramData\\oci-custom-agent\\error.log",
+    "error_log_backup_days": 7,
+    "error_log_use_utc": false
   },
   "disk": {
     "drive_letters": ["c"]
