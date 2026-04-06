@@ -48,8 +48,18 @@ OCI Compute のカスタムメトリクス取得方法 - スクリプト 編
 ---------------------------------------------------------------------
 .. code-block:: bash
 
+  TENANCY_ID=$(oci iam compartment list \
+    --lifecycle-state ACTIVE \
+    --include-root \
+    --profile ADMIN \
+    --auth security_token \
+    --query "data[?\"compartment-id\"==null].id | [0]" \
+    --raw-output)
+
+.. code-block:: bash
+
   oci os bucket create \
-  --compartment-id <ルートコンパートメントOCID> \
+  --compartment-id "${TENANCY_ID}" \
   --name terraform-working \
   --profile ADMIN --auth security_token
 
@@ -69,9 +79,28 @@ OCI Compute のカスタムメトリクス取得方法 - スクリプト 編
 
 .. code-block:: bash
 
+  TENANCY_ID=$(oci iam compartment list \
+    --lifecycle-state ACTIVE \
+    --include-root \
+    --profile ADMIN \
+    --auth security_token \
+    --query "data[?\"compartment-id\"==null].id | [0]" \
+    --raw-output)
+
+.. code-block:: bash
+
+  NAMESPACE=$(oci os ns get \
+    --compartment-id "${TENANCY_ID}" \
+    --profile ADMIN \
+    --auth security_token \
+    --query "data" \
+    --raw-output)
+
+.. code-block:: bash
+
   cat <<EOF > config.oci.tfbackend
   bucket = "terraform-working"
-  namespace = "テナンシに一意に付与されたネームスペース"
+  namespace = "${NAMESPACE}"
   key = "oci-compute-custom-metrics-broadcast-scripts/terraform.tfstate"
   auth = "SecurityToken"
   config_file_profile = "ADMIN"
@@ -87,8 +116,18 @@ OCI Compute のカスタムメトリクス取得方法 - スクリプト 編
 
 .. code-block:: bash
 
+  TENANCY_ID=$(oci iam compartment list \
+    --lifecycle-state ACTIVE \
+    --include-root \
+    --profile ADMIN \
+    --auth security_token \
+    --query "data[?\"compartment-id\"==null].id | [0]" \
+    --raw-output)
+
+.. code-block:: bash
+
   cat <<EOF > oci.auto.tfvars
-  tenancy_ocid = "テナンシOCID(=ルートコンパートメントOCID)"
+  tenancy_ocid = "${TENANCY_ID}"
   source_ip = "接続元IPアドレス(CIDR形式)"
   EOF
 
@@ -136,16 +175,22 @@ OCI Compute のカスタムメトリクス取得方法 - スクリプト 編
 * その場合、以下コマンドを実行し存在するリソース一覧を確認し削除してください
 
 .. code-block:: bash
+  
+  COMPARTMENT_NAME="oci-compute-custom-metrics-broadcast-scripts"
+  COMPARTMENT_ID=$(oci iam compartment list \
+    --lifecycle-state ACTIVE \
+    --profile ADMIN \
+    --auth security_token \
+    --query "data[?name=='${COMPARTMENT_NAME}'].id | [0]" \
+    --raw-output)
+
+.. code-block:: bash
 
   oci search resource structured-search \
-  --query-text "query all resources where compartmentId = 'コンパートメントOCID'" \
+  --query-text "query all resources where compartmentId = '${COMPARTMENT_ID}'" \
   --profile ADMIN \
   --auth security_token \
   --query "data.items[].{identifier:identifier, resource_type:\"resource-type\"}"
-
-.. note::
-
-  * コンパートメントOCIDは、適宜調査対象の値に置き換えてください
 
 参考資料
 =====================================================================
